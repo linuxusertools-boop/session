@@ -3,37 +3,209 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KEV API | STABLE SESSION</title>
+    <title>KEV API | 100% STABLE SESSION</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap');
-        :root { --bg: #f0eee4; --black: #000; --white: #fff; --accent: #25d366; }
-        body { font-family: 'Space Grotesk', sans-serif; background: var(--bg); padding: 2rem 1rem; }
-        .container { max-width: 500px; margin: 0 auto; }
-        .card { background: var(--white); border: 4px solid var(--black); box-shadow: 8px 8px 0px var(--black); padding: 2rem; text-align: center; }
-        input { width: 100%; padding: 15px; border: 4px solid var(--black); margin: 1rem 0; font-weight: bold; font-size: 1.1rem; }
-        button { width: 100%; padding: 15px; background: var(--black); color: var(--white); border: none; font-weight: 900; cursor: pointer; text-transform: uppercase; }
-        #code-box { font-size: 2.5rem; font-weight: 900; margin: 1.5rem 0; padding: 1rem; border: 4px dashed var(--black); background: #eee; min-height: 80px; display: flex; align-items: center; justify-content: center; letter-spacing: 5px; }
-        .status { margin-top: 1rem; font-weight: bold; font-size: 0.9rem; padding: 10px; border: 2px solid var(--black); display: none; }
+
+        :root {
+            --bg: #f0eee4;
+            --black: #000000;
+            --white: #ffffff;
+            --accent: #25d366;
+            --error: #ff5f5f;
+            --shadow: 8px 8px 0px var(--black);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: var(--bg);
+            color: var(--black);
+            padding: 2rem 1rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container { width: 100%; max-width: 450px; }
+
+        header {
+            margin-bottom: 2rem;
+            border-bottom: 8px solid var(--black);
+            padding-bottom: 1rem;
+        }
+
+        .logo { font-size: 3rem; font-weight: 900; line-height: 0.8; text-transform: uppercase; }
+
+        .card {
+            background: var(--white);
+            border: 4px solid var(--black);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            position: relative;
+        }
+
+        .badge {
+            position: absolute;
+            top: -15px;
+            right: 20px;
+            background: var(--accent);
+            padding: 5px 15px;
+            border: 3px solid var(--black);
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
+        .input-group { margin: 1.5rem 0; text-align: left; }
+        label { font-weight: 900; font-size: 0.8rem; text-transform: uppercase; display: block; margin-bottom: 8px; }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 4px solid var(--black);
+            font-family: inherit;
+            font-size: 1.2rem;
+            font-weight: bold;
+            outline: none;
+            background: var(--white);
+        }
+
+        #code-display {
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background: #e9e9e9;
+            border: 4px dashed var(--black);
+            font-size: 2.5rem;
+            font-weight: 900;
+            letter-spacing: 5px;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        button {
+            width: 100%;
+            padding: 20px;
+            background: var(--black);
+            color: var(--white);
+            border: none;
+            font-size: 1.2rem;
+            font-weight: 900;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: 0.1s;
+        }
+
+        button:active {
+            transform: translate(4px, 4px);
+        }
+
+        button:disabled { background: #888; cursor: not-allowed; }
+
+        .status-box {
+            margin-top: 1.5rem;
+            padding: 12px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            border: 3px solid var(--black);
+            display: none;
+            line-height: 1.4;
+        }
+
+        footer { margin-top: 2rem; text-align: center; font-weight: bold; opacity: 0.5; font-size: 0.8rem; }
     </style>
 </head>
 <body>
+
 <div class="container">
+    <header>
+        <div class="logo">KEV<br>SESSION</div>
+        <p style="font-weight: bold; margin-top: 10px;">MULTI-BRIDGE SYSTEM v2.0</p>
+    </header>
+
     <div class="card">
-        <h1 style="line-height: 0.9; margin-bottom: 10px;">KEV<br>SESSION</h1>
-        <p>Gunakan nomor HP (contoh: 62812xxx)</p>
+        <div class="badge">STABLE</div>
+        <p style="font-weight: 500; font-size: 0.95rem;">Dapatkan pairing code WhatsApp tanpa kendala serverless timeout.</p>
         
-        <input type="number" id="number" placeholder="628xxxxxxxxx">
-        
-        <div id="code-box">--------</div>
-        
-        <button id="btn" onclick="pair()">Dapatkan Kode</button>
-        <div id="status" class="status"></div>
+        <div class="input-group">
+            <label>Nomor WhatsApp (Gunakan Kode Negara)</label>
+            <input type="number" id="phone" placeholder="Contoh: 628123456789">
+        </div>
+
+        <div id="code-display">--------</div>
+
+        <button id="gen-btn" onclick="generatePairing()">Dapatkan Kode</button>
+
+        <div id="status" class="status-box"></div>
     </div>
+
+    <footer>
+        CREATED BY KEVCODEX &copy; 2026
+    </footer>
 </div>
 
 <script>
-    async function pair() {
-        const num = document.getElementById('number').value;
+    async function generatePairing() {
+        const phone = document.getElementById('phone').value;
+        const btn = document.getElementById('gen-btn');
+        const status = document.getElementById('status');
+        const codeBox = document.getElementById('code-display');
+
+        if(!phone || phone.length < 10) {
+            alert("Masukkan nomor WhatsApp yang valid!");
+            return;
+        }
+
+        btn.disabled = true;
+        status.style.display = "block";
+        status.style.background = "#eee";
+        status.innerHTML = "🌀 Sedang mencoba Server Utama...";
+        codeBox.innerHTML = "....";
+
+        // Daftar API Bridge untuk Redundancy (Jika satu gagal, coba yang lain)
+        const apiEndpoints = [
+            `https://c-o-r-t-e-x.vercel.app/code?number=${phone}`,
+            `https://api.paxsenix.biz.id/wa/pairing?number=${phone}`,
+            `https://api.vreden.my.id/api/pairing?number=${phone}`
+        ];
+
+        let success = false;
+
+        for (let i = 0; i < apiEndpoints.length; i++) {
+            try {
+                if (i > 0) status.innerHTML = `⚠️ Server ${i} sibuk, mencoba Server ${i+1}...`;
+                
+                const response = await fetch(apiEndpoints[i]);
+                const data = await response.json();
+
+                // Mendukung berbagai format respon API
+                const code = data.code || data.pairingCode || (data.result && data.result.code);
+
+                if (code) {
+                    codeBox.innerHTML = code;
+                    status.style.background = "#25d366";
+                    status.innerHTML = "✅ BERHASIL! Masukkan kode di atas pada notifikasi WhatsApp di HP Anda.";
+                    success = true;
+                    btn.disabled = false;
+                    break;
+                }
+            } catch (err) {
+                console.log(`Endpoint ${i} gagal, mencoba selanjutnya...`);
+            }
+        }
+
+        if (!success) {
+            btn.disabled = false;
+            status.style.background = "#ff5f5f";
+            status.innerHTML = "❌ SEMUA SERVER GAGAL. WhatsApp memblokir permintaan dari region ini. Coba lagi dalam 5 menit.";
+            codeBox.innerHTML = "LIMIT";
+        }
+    }
+</script>
+
+</body>
+</html>
         const btn = document.getElementById('btn');
         const codeBox = document.getElementById('code-box');
         const status = document.getElementById('status');
