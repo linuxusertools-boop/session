@@ -3,6 +3,7 @@ import archiver from 'archiver';
 import fs from 'fs';
 import pino from 'pino';
 
+// Status koneksi temporary
 let isConnected = false;
 
 export default async function handler(req, res) {
@@ -31,9 +32,33 @@ export default async function handler(req, res) {
                 if (update.connection === 'open') isConnected = true;
             });
 
-            // Beri jeda agar socket siap sebelum minta kode
+            // Beri jeda agar socket siap
             await delay(5000); 
             const cleanNumber = phoneNumber.replace(/[^0-9]/g, '');
+            const code = await sock.requestPairingCode(cleanNumber);
+            
+            return res.status(200).json({ code });
+        } catch (err) {
+            console.error(err);
+            return res.status(500).json({ error: "Server Error: " + err.message });
+        }
+    }
+
+    if (action === 'checkStatus') {
+        return res.status(200).json({ connected: isConnected });
+    }
+
+    if (action === 'download') {
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Disposition', 'attachment; filename=session.zip');
+        const archive = archiver('zip', { zlib: { level: 9 } });
+        archive.pipe(res);
+        archive.directory(sessionDir, false);
+        return archive.finalize();
+    }
+
+    res.status(404).send('Not Found');
+}
             const code = await sock.requestPairingCode(cleanNumber);
             
             return res.status(200).json({ code });
