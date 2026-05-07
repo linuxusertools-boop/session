@@ -1,39 +1,63 @@
-const QRCode = require('qrcode');
-const archiver = require('archiver');
-const fs = require('fs');
-const pino = require('pino');
+import { default as makeWASocket, useMultiFileAuthState, Browsers, delay } from '@whiskeysockets/baileys';
+import archiver from 'archiver';
+import fs from 'fs';
+import pino from 'pino';
 
-// Status temporary
 let isConnected = false;
-let pairingCode = null;
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
     const { action, phoneNumber } = req.query;
     const sessionDir = '/tmp/kevs_session';
 
-    // Perbaikan Error ERR_REQUIRE_ESM: Gunakan dynamic import
-    const { default: makeWASocket, useMultiFileAuthState, Browsers, delay } = await import('@whiskeysockets/baileys');
+    if (!fs.existsSync(sessionDir)) {
+        fs.mkdirSync(sessionDir, { recursive: true });
+    }
 
-    if (!fs.existsSync(sessionDir)) fs.mkdirSync(sessionDir, { recursive: true });
     const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
 
     if (action === 'getPairingCode') {
-        if (!phoneNumber) return res.status(400).json({ error: "Nomor HP wajib ada!" });
+        if (!phoneNumber) return res.status(400).json({ error: "Nomor HP wajib!" });
 
-        const sock = makeWASocket({
-            auth: state,
-            browser: Browsers.ubuntu("Chrome"),
-            logger: pino({ level: 'silent' })
-        });
+        try {
+            const sock = makeWASocket({
+                auth: state,
+                browser: Browsers.ubuntu("Chrome"),
+                logger: pino({ level: 'silent' }),
+                defaultQueryTimeoutMs: undefined
+            });
 
-        // Menangani pendaftaran kredensial
-        sock.ev.on('creds.update', saveCreds);
+            sock.ev.on('creds.update', saveCreds);
+            sock.ev.on('connection.update', (update) => {
+                if (update.connection === 'open') isConnected = true;
+            });
 
-        // Menangani koneksi
-        sock.ev.on('connection.update', (update) => {
-            const { connection } = update;
-            if (connection === 'open') isConnected = true;
-        });
+            // Beri jeda agar socket siap sebelum minta kode
+            await delay(5000); 
+            const cleanNumber = phoneNumber.replace(/[^0-9]/g, '');
+            const code = await sock.requestPairingCode(cleanNumber);
+            
+            return res.status(200).json({ code });
+        } catch (err) {
+            console.error(err);
+            return res.status(500).json({ error: "Gagal: " + err.message });
+        }
+    }
+
+    if (action === 'checkStatus') {
+        return res.status(200).json({ connected: isConnected });
+    }
+
+    if (action === 'download') {
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Disposition', 'attachment; filename=session.zip');
+        const archive = archiver('zip', { zlib: { level: 9 } });
+        archive.pipe(res);
+        archive.directory(sessionDir, false);
+        return archive.finalize();
+    }
+
+    res.status(404).send('Not Found');
+}
 
         try {
             await delay(3000);
