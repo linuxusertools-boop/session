@@ -1,64 +1,42 @@
-const { default: makeWASocket, useMultiFileAuthState, Browsers } = require('@whiskeysockets/baileys');
-const QRCode = require('qrcode');
+const { default: makeWASocket, useMultiFileAuthState, Browsers, delay } = require('@whiskeysockets/baileys');
 const archiver = require('archiver');
 const fs = require('fs');
 const pino = require('pino');
 
-// Global variable untuk menyimpan status (hanya selama instance warm)
-let qrCodeData = null;
 let isConnected = false;
 
 module.exports = async (req, res) => {
-    const { action } = req.query;
+    const { action, phoneNumber } = req.query;
     const sessionDir = '/tmp/kevs_session';
 
     if (!fs.existsSync(sessionDir)) fs.mkdirSync(sessionDir, { recursive: true });
     const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
 
-    if (action === 'getQR') {
-        // Jika sudah ada QR yang ter-generate, langsung kirim
-        if (qrCodeData && !isConnected) {
-            return res.status(200).json({ qr: qrCodeData });
-        }
+    // ENDPOINT UNTUK PAIRING CODE
+    if (action === 'getPairingCode') {
+        if (!phoneNumber) return res.status(400).json({ error: "Nomor HP wajib ada (contoh: 62812xxx)" });
 
         const sock = makeWASocket({
             auth: state,
-            browser: Browsers.macOS('Desktop'),
-            printQRInTerminal: false,
-            logger: pino({ level: 'silent' }),
-            connectTimeoutMs: 60000, // Tambah durasi timeout
-            defaultQueryTimeoutMs: 0
+            browser: Browsers.ubuntu("Chrome"), // Wajib Chrome/Ubuntu untuk Pairing Code
+            logger: pino({ level: 'silent' })
         });
 
-        return new Promise((resolve) => {
-            // Berikan respon cepat ke frontend agar tidak timeout
-            const timeoutHandler = setTimeout(() => {
-                if (!res.headersSent) {
-                    res.status(200).json({ status: "processing", message: "Silakan refresh dalam 3 detik" });
-                    resolve();
-                }
-            }, 8000);
-
-            sock.ev.on('connection.update', async (update) => {
-                const { qr, connection } = update;
-                
-                if (qr) {
-                    qrCodeData = await QRCode.toDataURL(qr);
-                    if (!res.headersSent) {
-                        res.status(200).json({ qr: qrCodeData });
-                        clearTimeout(timeoutHandler);
-                        resolve();
-                    }
-                }
-
-                if (connection === 'open') {
-                    isConnected = true;
-                    qrCodeData = null; // Reset QR karena sudah terhubung
-                }
+        try {
+            // Tunggu sebentar agar socket siap
+            await delay(3000);
+            const code = await sock.requestPairingCode(phoneNumber.replace(/[^0-9]/g, ''));
+            
+            // Listen untuk koneksi
+            sock.ev.on('connection.update', (update) => {
+                if (update.connection === 'open') isConnected = true;
             });
-
             sock.ev.on('creds.update', saveCreds);
-        });
+
+            return res.status(200).json({ code });
+        } catch (err) {
+            return res.status(500).json({ error: "Gagal ambil kode. Coba lagi." });
+        }
     }
 
     if (action === 'checkStatus') {
@@ -67,40 +45,10 @@ module.exports = async (req, res) => {
 
     if (action === 'download') {
         res.setHeader('Content-Type', 'application/zip');
-        res.setHeader('Content-Disposition', 'attachment; filename=kev_session.zip');
-        const archive = archiver('zip', { zlib: { level: 9 } });
+        res.setHeader('Content-Disposition', 'attachment; filename=session_aman.zip');
+        const archive = archiver('zip');
         archive.pipe(res);
         archive.directory(sessionDir, false);
         return archive.finalize();
     }
-
-    res.status(404).send('Not Found');
-};
-                    const qrDataUrl = await QRCode.toDataURL(qr);
-                    res.status(200).json({ qr: qrDataUrl });
-                    clearTimeout(timeout);
-                }
-                if (connection === 'open') {
-                    isConnected = true;
-                    resolve();
-                }
-            });
-            sock.ev.on('creds.update', saveCreds);
-        });
-    }
-
-    if (action === 'checkStatus') {
-        return res.status(200).json({ connected: isConnected });
-    }
-
-    if (action === 'download') {
-        res.setHeader('Content-Type', 'application/zip');
-        res.setHeader('Content-Disposition', 'attachment; filename=kev_session.zip');
-        const archive = archiver('zip', { zlib: { level: 9 } });
-        archive.pipe(res);
-        archive.directory(sessionDir, false);
-        return archive.finalize();
-    }
-    
-    res.status(404).send('Not Found');
 };
