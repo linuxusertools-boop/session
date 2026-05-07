@@ -1,6 +1,6 @@
 {
-  "name": "wa-session-grabber",
-  "version": "1.1.0",
+  "name": "kev-session-grabber",
+  "version": "1.2.0",
   "type": "module",
   "dependencies": {
     "@whiskeysockets/baileys": "^6.6.0",
