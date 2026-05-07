@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KEV API | WA SESSION</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap');
+        :root {
+            --bg: #f0eee4;
+            --black: #000000;
+            --white: #ffffff;
+            --accent: #25d366;
+            --shadow: 6px 6px 0px var(--black);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: var(--bg);
+            color: var(--black);
+            padding: 2rem 1rem;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        header {
+            margin-bottom: 3rem;
+            border-bottom: 10px solid var(--black);
+            padding-bottom: 1rem;
+        }
+        .logo-title { font-size: 3.5rem; font-weight: 900; line-height: 0.9; }
+        .api-item {
+            background: var(--white);
+            border: 4px solid var(--black);
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        .api-header {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--white);
+        }
+        .api-header h3 { font-size: 1.5rem; display: flex; align-items: center; gap: 10px; }
+        .method-tag { 
+            font-size: 0.8rem; 
+            background: var(--accent); 
+            color: var(--black); 
+            padding: 4px 8px;
+            border: 2px solid var(--black);
+        }
+        .api-content {
+            padding: 2rem;
+            border-top: 4px solid var(--black);
+            background: #fff;
+            text-align: center;
+        }
+        .qr-container {
+            margin: 20px auto;
+            width: 260px;
+            height: 260px;
+            border: 4px solid var(--black);
+            background: #eee;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .qr-container img { width: 100%; height: 100%; display: block; }
+        button {
+            padding: 15px 30px;
+            background: var(--black);
+            color: var(--white);
+            border: none;
+            font-weight: 900;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 4px 4px 0px #666;
+            transition: 0.2s;
+            font-size: 1rem;
+        }
+        button:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px #666; }
+        .status-box {
+            margin-top: 1.5rem;
+            font-weight: bold;
+            padding: 12px;
+            border: 3px dashed var(--black);
+            display: none;
+        }
+        footer { text-align: center; margin-top: 4rem; font-weight: bold; opacity: 0.5; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <div class="logo-title">KEV<br>SESSION</div>
+        <p style="font-weight: bold; margin-top: 10px;">V1.0.0 • SECURE WA PAIRING</p>
+    </header>
+    <div class="api-item">
+        <div class="api-header">
+            <h3><span class="method-tag">SECURE</span> WA-SESSION-GRABBER</h3>
+        </div>
+        <div class="api-content">
+            <p style="margin-bottom: 10px;">Klik tombol di bawah untuk memunculkan QR Code.</p>
+            <div class="qr-container" id="qr-box">
+                <span id="placeholder-text">QR muncul di sini</span>
+            </div>
+            <button id="gen-btn" onclick="generateQR()">Generate QR Code</button>
+            <br>
+            <div id="status" class="status-box">
+                Menunggu scan...
+            </div>
+        </div>
+    </div>
+    <footer>
+        BY KEVCODEX &copy; 2026
+    </footer>
+</div>
+<script>
+    let pollInterval;
+    async function generateQR() {
+        const qrBox = document.getElementById('qr-box');
+        const status = document.getElementById('status');
+        const btn = document.getElementById('gen-btn');
+        
+        btn.disabled = true;
+        status.style.display = "inline-block";
+        status.innerHTML = "Menghubungkan ke server...";
+        qrBox.innerHTML = '<span>Memuat QR...</span>';
+
+        try {
+            const response = await fetch('/api/session?action=getQR');
+            const data = await response.json();
+            if (data.qr) {
+                qrBox.innerHTML = `<img src="${data.qr}" alt="QR Code">`;
+                status.innerHTML = "QR Siap! Silakan Scan.";
+                startPolling();
+            } else {
+                throw new Error();
+            }
+        } catch (err) {
+            qrBox.innerHTML = '<span>Gagal. Coba lagi.</span>';
+            btn.disabled = false;
+        }
+    }
+
+    function startPolling() {
+        if(pollInterval) clearInterval(pollInterval);
+        pollInterval = setInterval(async () => {
+            try {
+                const res = await fetch('/api/session?action=checkStatus');
+                const data = await res.json();
+                if (data.connected) {
+                    const status = document.getElementById('status');
+                    status.innerHTML = "BERHASIL! Mengunduh...";
+                    status.style.background = "#50fa7b";
+                    clearInterval(pollInterval);
+                    window.location.href = '/api/session?action=download';
+                }
+            } catch (e) {}
+        }, 3000);
+    }
+</script>
+</body>
+</html>
