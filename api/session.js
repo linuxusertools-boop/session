@@ -3,12 +3,11 @@ import archiver from 'archiver';
 import fs from 'fs';
 import pino from 'pino';
 
-// Status koneksi temporary
 let isConnected = false;
 
 export default async function handler(req, res) {
     const { action, phoneNumber } = req.query;
-    const sessionDir = '/tmp/kevs_session';
+    const sessionDir = '/tmp/session_' + (phoneNumber || 'default');
 
     if (!fs.existsSync(sessionDir)) {
         fs.mkdirSync(sessionDir, { recursive: true });
@@ -16,15 +15,14 @@ export default async function handler(req, res) {
 
     const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
 
-    if (action === 'getPairingCode') {
-        if (!phoneNumber) return res.status(400).json({ error: "Nomor HP wajib!" });
+    try {
+        if (action === 'getPairingCode') {
+            if (!phoneNumber) return res.status(400).json({ error: "Nomor diperlukan" });
 
-        try {
             const sock = makeWASocket({
                 auth: state,
                 browser: Browsers.ubuntu("Chrome"),
-                logger: pino({ level: 'silent' }),
-                defaultQueryTimeoutMs: undefined
+                logger: pino({ level: 'silent' })
             });
 
             sock.ev.on('creds.update', saveCreds);
@@ -32,8 +30,29 @@ export default async function handler(req, res) {
                 if (update.connection === 'open') isConnected = true;
             });
 
-            // Beri jeda agar socket siap
-            await delay(5000); 
+            await delay(3000);
+            const code = await sock.requestPairingCode(phoneNumber.replace(/[^0-9]/g, ''));
+            return res.status(200).json({ code });
+        }
+
+        if (action === 'checkStatus') {
+            return res.status(200).json({ connected: isConnected });
+        }
+
+        if (action === 'download') {
+            res.setHeader('Content-Type', 'application/zip');
+            res.setHeader('Content-Disposition', 'attachment; filename=session.zip');
+            const archive = archiver('zip');
+            archive.pipe(res);
+            archive.directory(sessionDir, false);
+            return archive.finalize();
+        }
+    } catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+
+    res.status(404).json({ error: "Not Found" });
+}
             const cleanNumber = phoneNumber.replace(/[^0-9]/g, '');
             const code = await sock.requestPairingCode(cleanNumber);
             
