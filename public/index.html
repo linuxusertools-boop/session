@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KEV API | SESSION GEN</title>
+    <title>KEV API | PAIRING SYSTEM</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap');
 
         :root {
-            --bg: #f4f1de;
-            --black: #000000;
+            --bg: #f5f5f5;
+            --black: #1a1a1a;
             --white: #ffffff;
             --accent: #25d366;
-            --shadow: 6px 6px 0px var(--black);
+            --error: #ff4747;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -20,78 +20,123 @@
         body {
             font-family: 'Space Grotesk', sans-serif;
             background-color: var(--bg);
-            padding: 2rem 1rem;
+            color: var(--black);
             display: flex;
             justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
         }
 
-        .container { width: 100%; max-width: 400px; }
+        .container {
+            width: 100%;
+            max-width: 420px;
+        }
 
         .card {
             background: var(--white);
             border: 4px solid var(--black);
-            box-shadow: var(--shadow);
-            padding: 2rem;
+            box-shadow: 10px 10px 0px var(--black);
+            padding: 2.5rem;
             text-align: center;
         }
 
-        .header-box {
-            background: var(--black);
-            color: var(--white);
-            padding: 10px;
-            margin-bottom: 2rem;
+        h1 {
+            font-size: 2.5rem;
             font-weight: 900;
+            line-height: 1;
+            margin-bottom: 0.5rem;
             text-transform: uppercase;
-            letter-spacing: 2px;
+        }
+
+        p {
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .input-wrapper {
+            text-align: left;
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 700;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
         }
 
         input {
             width: 100%;
             padding: 15px;
-            border: 4px solid var(--black);
+            border: 3px solid var(--black);
             font-family: inherit;
             font-size: 1.1rem;
             font-weight: bold;
-            margin-bottom: 1.5rem;
             outline: none;
+            transition: 0.2s;
         }
 
-        #code-box {
-            background: #eee;
+        input:focus {
+            background: #fffdf0;
+            box-shadow: 4px 4px 0px var(--black);
+        }
+
+        #code-display {
+            background: #fdfdfd;
             border: 4px dashed var(--black);
             padding: 1.5rem;
             font-size: 2.2rem;
             font-weight: 900;
-            letter-spacing: 5px;
-            margin-bottom: 1.5rem;
-            min-height: 80px;
+            letter-spacing: 6px;
+            margin: 1.5rem 0;
+            min-height: 90px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #333;
+            color: var(--black);
         }
 
         button {
             width: 100%;
-            padding: 15px;
+            padding: 18px;
             background: var(--black);
             color: var(--white);
             border: none;
+            font-family: inherit;
             font-weight: 900;
-            font-size: 1rem;
+            font-size: 1.1rem;
             cursor: pointer;
             text-transform: uppercase;
             transition: 0.1s;
         }
 
-        button:active { transform: translate(3px, 3px); }
-        button:disabled { background: #666; cursor: not-allowed; }
+        button:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 4px 4px 0px var(--accent);
+        }
 
-        #status {
-            margin-top: 1rem;
-            font-size: 0.85rem;
-            font-weight: bold;
+        button:active {
+            transform: translate(2px, 2px);
+            box-shadow: none;
+        }
+
+        button:disabled {
+            background: #aaa;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        #status-msg {
+            margin-top: 1.2rem;
             padding: 10px;
+            font-size: 0.8rem;
+            font-weight: 700;
             border: 2px solid var(--black);
             display: none;
         }
@@ -99,8 +144,10 @@
         .footer {
             margin-top: 2rem;
             font-size: 0.7rem;
-            font-weight: bold;
-            opacity: 0.6;
+            font-weight: 700;
+            text-transform: uppercase;
+            opacity: 0.4;
+            letter-spacing: 1px;
         }
     </style>
 </head>
@@ -108,82 +155,70 @@
 
 <div class="container">
     <div class="card">
-        <div class="header-box">KEV SESSION</div>
-        
-        <p style="font-size: 0.9rem; margin-bottom: 1rem; font-weight: 500;">
-            Masukkan nomor WA Anda dengan kode negara.
-        </p>
+        <h1>KEV<br>SESSION</h1>
+        <p>Hubungkan WhatsApp ke Vercel tanpa drama.</p>
 
-        <input type="number" id="phone" placeholder="628xxxxxxxxx" required>
+        <div class="input-wrapper">
+            <label>Nomor WhatsApp (dengan kode negara)</label>
+            <input type="number" id="phoneNumber" placeholder="Contoh: 628123456789">
+        </div>
 
-        <div id="code-box">--------</div>
+        <div id="code-display">--------</div>
 
-        <button id="btn" onclick="getPairing()">Generate Code</button>
+        <button id="submitBtn" onclick="requestPairing()">Generate Code</button>
 
-        <div id="status"></div>
+        <div id="status-msg"></div>
 
-        <div class="footer">KEVCODEX PROJECT &copy; 2026</div>
+        <div class="footer">KevCodex &copy; 2026</div>
     </div>
 </div>
 
 <script>
-    async function getPairing() {
-        const phone = document.getElementById('phone').value;
-        const btn = document.getElementById('btn');
-        const codeBox = document.getElementById('code-box');
-        const status = document.getElementById('status');
+    async function requestPairing() {
+        const phone = document.getElementById('phoneNumber').value;
+        const btn = document.getElementById('submitBtn');
+        const codeBox = document.getElementById('code-display');
+        const status = document.getElementById('status-msg');
 
         if (!phone || phone.length < 9) {
-            alert("Nomor tidak valid!");
+            alert("Harap masukkan nomor WhatsApp yang benar!");
             return;
         }
 
+        // Reset UI
         btn.disabled = true;
         status.style.display = "block";
         status.style.background = "#fff";
-        status.innerHTML = "Meminta kode dari server (Trial 1)...";
-        codeBox.innerHTML = "...";
+        status.innerHTML = "🌀 Sedang memproses di Server Vercel...";
+        codeBox.innerHTML = "....";
 
-        // Daftar API paling "FRESH" (Update Mei 2026)
-        const apis = [
-            `https://api.vreden.my.id/api/pairing?number=${phone}`,
-            `https://widipe.com/pairing?number=${phone}`,
-            `https://api.siputzx.my.id/api/pairing?number=${phone}`
-        ];
-
-        let success = false;
-
-        for (let api of apis) {
-            try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 15000); // Timeout 15 detik
-
-                const res = await fetch(api, { signal: controller.signal });
-                const data = await res.json();
-                clearTimeout(timeoutId);
-
-                // Ekstraksi kode dari berbagai format JSON
-                const code = data.code || data.pairingCode || (data.result && data.result.code) || data.data;
-
-                if (code) {
-                    codeBox.innerHTML = code;
-                    status.style.background = "#25d366";
-                    status.innerHTML = "✅ BERHASIL! Masukkan kode ini di HP Anda.";
-                    success = true;
-                    btn.disabled = false;
-                    break;
-                }
-            } catch (e) {
-                status.innerHTML = "Jalur 1 sibuk, mencoba jalur lain...";
-                console.log("Error pada API:", api);
+        try {
+            // Memanggil API internal /api/session.js
+            const response = await fetch(`/api/session?number=${phone}`);
+            
+            // Cek jika response bukan JSON (Vercel Crash)
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                throw new Error("Vercel Runtime Error (Check Logs)");
             }
-        }
 
-        if (!success) {
+            const data = await response.json();
+
+            if (data.code) {
+                codeBox.innerHTML = data.code;
+                status.style.background = "#25d366";
+                status.innerHTML = "✅ BERHASIL! Masukkan kode ini pada notifikasi WhatsApp di HP Anda.";
+            } else {
+                throw new Error(data.error || "Gagal mendapatkan kode.");
+            }
+        } catch (err) {
+            console.error(err);
+            status.style.background = "#ff4747";
+            status.style.color = "#fff";
+            status.innerHTML = "❌ ERROR: " + err.message;
+            codeBox.innerHTML = "FAILED";
+        } finally {
             btn.disabled = false;
-            status.style.background = "#ff5f5f";
-            status.innerHTML = "❌ SEMUA JALUR GAGAL. Gunakan Termux untuk mengambil session manual jika mendesak.";
-            codeBox.innerHTML = "LIMIT";
         }
     }
 </script>
