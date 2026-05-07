@@ -1,39 +1,66 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KEV API | WA SESSION</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap');
+const QRCode = require('qrcode');
+const archiver = require('archiver');
+const fs = require('fs');
+const pino = require('pino');
 
-        :root {
-            --bg: #f0eee4;
-            --black: #000000;
-            --white: #ffffff;
-            --accent: #25d366;
-            --shadow: 8px 8px 0px var(--black);
+// Status temporary
+let isConnected = false;
+let pairingCode = null;
+
+module.exports = async (req, res) => {
+    const { action, phoneNumber } = req.query;
+    const sessionDir = '/tmp/kevs_session';
+
+    // Perbaikan Error ERR_REQUIRE_ESM: Gunakan dynamic import
+    const { default: makeWASocket, useMultiFileAuthState, Browsers, delay } = await import('@whiskeysockets/baileys');
+
+    if (!fs.existsSync(sessionDir)) fs.mkdirSync(sessionDir, { recursive: true });
+    const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
+
+    if (action === 'getPairingCode') {
+        if (!phoneNumber) return res.status(400).json({ error: "Nomor HP wajib ada!" });
+
+        const sock = makeWASocket({
+            auth: state,
+            browser: Browsers.ubuntu("Chrome"),
+            logger: pino({ level: 'silent' })
+        });
+
+        // Menangani pendaftaran kredensial
+        sock.ev.on('creds.update', saveCreds);
+
+        // Menangani koneksi
+        sock.ev.on('connection.update', (update) => {
+            const { connection } = update;
+            if (connection === 'open') isConnected = true;
+        });
+
+        try {
+            await delay(3000);
+            // Request pairing code
+            const code = await sock.requestPairingCode(phoneNumber.replace(/[^0-9]/g, ''));
+            return res.status(200).json({ code });
+        } catch (err) {
+            return res.status(500).json({ error: "Gagal mendapatkan kode. Coba lagi." });
         }
+    }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+    if (action === 'checkStatus') {
+        return res.status(200).json({ connected: isConnected });
+    }
 
-        body {
-            font-family: 'Space Grotesk', sans-serif;
-            background-color: var(--bg);
-            color: var(--black);
-            padding: 2rem 1rem;
-            line-height: 1.5;
-        }
+    if (action === 'download') {
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Disposition', 'attachment; filename=session.zip');
+        const archive = archiver('zip', { zlib: { level: 9 } });
+        archive.pipe(res);
+        archive.directory(sessionDir, false);
+        return archive.finalize();
+    }
 
-        .container { max-width: 600px; margin: 0 auto; }
+    res.status(404).send('Not Found');
+};
 
-        header {
-            margin-bottom: 3rem;
-            border-bottom: 10px solid var(--black);
-            padding-bottom: 1rem;
-        }
-
-        .logo-title { font-size: 3.5rem; font-weight: 900; line-height: 0.9; }
 
         .api-item {
             background: var(--white);
