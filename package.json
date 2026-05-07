@@ -1,6 +1,7 @@
 {
   "name": "wa-session-grabber",
   "version": "1.0.0",
+  "type": "module",
   "dependencies": {
     "@whiskeysockets/baileys": "latest",
     "qrcode": "^1.5.0",
